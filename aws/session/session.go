@@ -367,6 +367,8 @@ func newSession(opts Options, envCfg envConfig, cfgs ...*aws.Config) (*Session, 
 
 	// Load additional config from file(s)
 	sharedCfg, err := loadSharedConfig(envCfg.Profile, cfgFiles)
+	fmt.Println(envCfg.Profile)
+	fmt.Println(sharedCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -470,6 +472,7 @@ func mergeConfigSrcs(cfg, userCfg *aws.Config, envCfg envConfig, sharedCfg share
 		// inspect the profile to see if a credential source has been specified.
 		if envCfg.EnableSharedConfig && len(sharedCfg.AssumeRole.CredentialSource) > 0 {
 
+			fmt.Println("DEBUG: We're in the AssumeRole Credentials Section")
 			// if both credential_source and source_profile have been set, return an error
 			// as this is undefined behavior.
 			if len(sharedCfg.AssumeRole.SourceProfile) > 0 {
@@ -501,10 +504,12 @@ func mergeConfigSrcs(cfg, userCfg *aws.Config, envCfg envConfig, sharedCfg share
 					envCfg.Creds,
 				)
 			case credSourceECSContainer:
+				fmt.Println("DEBUG: Entering credSourceECSContainer")
 				if len(os.Getenv(shareddefaults.ECSCredsProviderEnvVar)) == 0 {
 					return ErrSharedConfigECSContainerEnvVarEmpty
 				}
 
+				fmt.Println("DEBUG: ECS Credentials")
 				cfgCp := *cfg
 				p := defaults.RemoteCredProvider(cfgCp, handlers)
 				creds := credentials.NewCredentials(p)
@@ -518,10 +523,12 @@ func mergeConfigSrcs(cfg, userCfg *aws.Config, envCfg envConfig, sharedCfg share
 		}
 
 		if len(envCfg.Creds.AccessKeyID) > 0 {
+			fmt.Println("DEBUG: AccessKeyID")
 			cfg.Credentials = credentials.NewStaticCredentialsFromCreds(
 				envCfg.Creds,
 			)
 		} else if envCfg.EnableSharedConfig && len(sharedCfg.AssumeRole.RoleARN) > 0 && sharedCfg.AssumeRoleSource != nil {
+			fmt.Println("DEBUG: Within AssumeRole Credentials Establishment")
 			cfgCp := *cfg
 			cfgCp.Credentials = credentials.NewStaticCredentialsFromCreds(
 				sharedCfg.AssumeRoleSource.Creds,

@@ -94,6 +94,7 @@ type sharedConfigFile struct {
 // See sharedConfig.setFromFile for information how the config files
 // will be loaded.
 func loadSharedConfig(profile string, filenames []string) (sharedConfig, error) {
+	fmt.Printf("DEBUG: loadSharedConfig has been hit!\n")
 	if len(profile) == 0 {
 		profile = DefaultSharedConfigProfile
 	}
@@ -109,6 +110,7 @@ func loadSharedConfig(profile string, filenames []string) (sharedConfig, error) 
 	}
 
 	if len(cfg.AssumeRole.SourceProfile) > 0 {
+		fmt.Printf("DEBUG: AssumeRole has been hit!\n")
 		if err := cfg.setAssumeRoleSource(profile, files); err != nil {
 			return sharedConfig{}, err
 		}
@@ -121,6 +123,7 @@ func loadSharedConfigIniFiles(filenames []string) ([]sharedConfigFile, error) {
 	files := make([]sharedConfigFile, 0, len(filenames))
 
 	for _, filename := range filenames {
+		fmt.Printf("DEBUG: Loading %s \n", filename)
 		sections, err := ini.OpenFile(filename)
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == ini.ErrCodeUnableToReadFile {
 			// Skip files which can't be opened and read for whatever reason
@@ -128,7 +131,7 @@ func loadSharedConfigIniFiles(filenames []string) ([]sharedConfigFile, error) {
 		} else if err != nil {
 			return nil, SharedConfigLoadError{Filename: filename, Err: err}
 		}
-
+		fmt.Printf("DEBUG: Appending %s \n", filename)
 		files = append(files, sharedConfigFile{
 			Filename: filename, IniData: sections,
 		})
@@ -218,6 +221,8 @@ func (cfg *sharedConfig) setFromIniFile(profile string, file sharedConfigFile) e
 	credentialSource := section.String(credentialSourceKey)
 	hasSource := len(srcProfile) > 0 || len(credentialSource) > 0
 	if len(roleArn) > 0 && hasSource {
+		fmt.Printf("DEBUG: AssumeRole: %s \n", profile)
+		fmt.Printf("DEBUG: ARN: %s \n", roleArn)
 		cfg.AssumeRole = assumeRoleConfig{
 			RoleARN:          roleArn,
 			SourceProfile:    srcProfile,

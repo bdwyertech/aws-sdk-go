@@ -512,9 +512,15 @@ func mergeConfigSrcs(cfg, userCfg *aws.Config, envCfg envConfig, sharedCfg share
 				fmt.Println("DEBUG: ECS Credentials")
 				cfgCp := *cfg
 				p := defaults.RemoteCredProvider(cfgCp, handlers)
-				creds := credentials.NewCredentials(p)
+				cfgCp.Credentials = credentials.NewCredentials(p)
 
-				cfg.Credentials = creds
+				if len(sharedCfg.AssumeRole.MFASerial) > 0 && sessOpts.AssumeRoleTokenProvider == nil {
+					// AssumeRole Token provider is required if doing Assume Role
+					// with MFA.
+					return AssumeRoleTokenProviderNotSetError{}
+				}
+
+				cfg.Credentials = assumeRoleCredentials(cfgCp, handlers, sharedCfg, sessOpts)
 			default:
 				return ErrSharedConfigInvalidCredSource
 			}
